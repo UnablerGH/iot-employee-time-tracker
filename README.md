@@ -53,4 +53,4 @@ cd iot-employee-time-tracker
 
     ```bash
     python app.py
-    ```
+    ```pip list
