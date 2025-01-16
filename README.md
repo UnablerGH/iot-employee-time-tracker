@@ -40,3 +40,17 @@ The backend of the system is powered by Flask and uses a local database to store
 ```bash
 git clone https://github.com/yourusername/iot-employee-time-tracker.git
 cd iot-employee-time-tracker
+```
+
+### 2. Create the python virtual environment and install required libraties
+
+   ```bash
+   python -m venv venv
+   source venv/Scripts/activate
+   pip install -r requirements.txt
+   ```
+### 3. Run application
+
+    ```bash
+    python app.py
+    ```
