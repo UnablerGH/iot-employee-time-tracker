@@ -3,6 +3,7 @@ import sqlite3
 from datetime import datetime, timedelta
 import time
 import threading
+import requests
 
 app = Flask(__name__)
 
@@ -115,14 +116,24 @@ def simulate_workday():
     time.sleep(2)  # Simulate a short delay before starting
     uids = ['1234567890', '0987654321', '1839402942']
     for uid in uids:
-        request.post(f"http://127.0.0.1:5000/entry/{uid}")
+        # Use the correct requests library to make HTTP POST requests
+        response = requests.post(f"http://127.0.0.1:5000/entry/{uid}")
+        if response.status_code == 201:
+            print(f"Entry logged for UID {uid}.")
+        else:
+            print(f"Failed to log entry for UID {uid}: {response.status_code} - {response.json()}")
+        
         time.sleep(5)  # Simulate 5 seconds of work
-        request.post(f"http://127.0.0.1:5000/leave/{uid}")
-
+        
+        response = requests.post(f"http://127.0.0.1:5000/leave/{uid}")
+        if response.status_code == 201:
+            print(f"Leave logged for UID {uid}.")
+        else:
+            print(f"Failed to log leave for UID {uid}: {response.status_code} - {response.json()}")
 # Initialize database
 initialize_database()
 
 if __name__ == '__main__':
     # Start simulation in a separate thread
-    threading.Thread(target=simulate_workday, daemon=True).start()
+    # threading.Thread(target=simulate_workday, daemon=True).start()
     app.run(debug=True)
