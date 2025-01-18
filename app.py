@@ -7,22 +7,18 @@ import requests
 
 app = Flask(__name__)
 
-# Database connection function
 def get_db_connection():
     conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row  # This makes rows return as dictionaries
+    conn.row_factory = sqlite3.Row
     return conn
 
-# Initialize database: Create tables and insert sample data if necessary
 def initialize_database():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Drop tables for a fresh start
     cursor.execute("DROP TABLE IF EXISTS employees")
     cursor.execute("DROP TABLE IF EXISTS entries")
 
-    # Create employees table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS employees (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,7 +26,6 @@ def initialize_database():
     )
     ''')
 
-    # Create entries table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS entries (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,14 +36,30 @@ def initialize_database():
     )
     ''')
 
-    # Insert sample data into employees table
     sample_data = [('1234567890',), ('0987654321',), ('1839402942',)]
     cursor.executemany("INSERT INTO employees (UID) VALUES (?)", sample_data)
     
     conn.commit()
     conn.close()
 
-# Endpoint to track employee entry by UID
+@app.route('/add_employee/<uid>', methods=['POST'])
+def add_employee(uid):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("INSERT INTO employees (UID) VALUES (?)", (uid,))
+        conn.commit()
+        message = f"Employee with UID {uid} successfully added."
+        status_code = 201
+    except sqlite3.IntegrityError:
+        message = f"Employee with UID {uid} already exists."
+        status_code = 400
+    finally:
+        conn.close()
+
+    return jsonify({"message": message}), status_code
+
 @app.route('/entry/<uid>', methods=['POST'])
 def track_entry(uid):
     conn = get_db_connection()
@@ -67,7 +78,6 @@ def track_entry(uid):
         conn.close()
         return jsonify({"message": "Employee not found"}), 404
 
-# Endpoint to track employee leave by UID
 @app.route('/leave/<uid>', methods=['POST'])
 def track_leave(uid):
     conn = get_db_connection()
@@ -86,7 +96,6 @@ def track_leave(uid):
         conn.close()
         return jsonify({"message": "No active entry record found for this employee"}), 404
 
-# Endpoint to get total time for all employees
 @app.route('/daily_summary', methods=['GET'])
 def daily_summary():
     conn = get_db_connection()
@@ -101,7 +110,6 @@ def daily_summary():
     conn.close()
     return jsonify(summary), 200
 
-# Endpoint to fetch all logs
 @app.route('/logs', methods=['GET'])
 def get_logs():
     conn = get_db_connection()
@@ -111,29 +119,9 @@ def get_logs():
     conn.close()
     return jsonify(logs), 200
 
-# Simulate a workday
-def simulate_workday():
-    time.sleep(2)  # Simulate a short delay before starting
-    uids = ['1234567890', '0987654321', '1839402942']
-    for uid in uids:
-        # Use the correct requests library to make HTTP POST requests
-        response = requests.post(f"http://127.0.0.1:5000/entry/{uid}")
-        if response.status_code == 201:
-            print(f"Entry logged for UID {uid}.")
-        else:
-            print(f"Failed to log entry for UID {uid}: {response.status_code} - {response.json()}")
-        
-        time.sleep(5)  # Simulate 5 seconds of work
-        
-        response = requests.post(f"http://127.0.0.1:5000/leave/{uid}")
-        if response.status_code == 201:
-            print(f"Leave logged for UID {uid}.")
-        else:
-            print(f"Failed to log leave for UID {uid}: {response.status_code} - {response.json()}")
-# Initialize database
-initialize_database()
+
+
 
 if __name__ == '__main__':
-    # Start simulation in a separate thread
-    # threading.Thread(target=simulate_workday, daemon=True).start()
+    initialize_database()
     app.run(debug=True)

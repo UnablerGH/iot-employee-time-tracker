@@ -4,7 +4,6 @@ from datetime import datetime
 BASE_URL = "http://127.0.0.1:5000"
 
 def get_latest_entries(uid, n):
-    """Fetch the latest `n` entries for the given UID. If n is -1, fetch all."""
     response = requests.get(f"{BASE_URL}/logs")
     if response.status_code == 200:
         logs = response.json()
@@ -18,7 +17,6 @@ def get_latest_entries(uid, n):
         return []
 
 def calculate_time_spent(log):
-    """Calculate time spent in the office for a single log."""
     if log["entry_time"] and log["leave_time"]:
         entry_time = datetime.strptime(log["entry_time"], "%Y-%m-%d %H:%M:%S")
         leave_time = datetime.strptime(log["leave_time"], "%Y-%m-%d %H:%M:%S")
@@ -26,7 +24,6 @@ def calculate_time_spent(log):
     return None
 
 def view_employee_logs():
-    """View the latest `n` entries for an employee."""
     uid = input("Enter employee UID: ").strip()
     if not uid:
         print("UID cannot be empty!")
@@ -51,7 +48,6 @@ def view_employee_logs():
         print(f"No logs found for UID {uid}.")
 
 def view_daily_summary():
-    """View the daily summary for all employees."""
     response = requests.get(f"{BASE_URL}/daily_summary")
     if response.status_code == 200:
         summary = response.json()
@@ -72,14 +68,28 @@ def view_all_logs():
     else:
         print(f"Error fetching logs: {response.status_code}")
 
+def add_employee():
+    uid = input("Enter the UID for the new employee: ").strip()
+    if not uid:
+        print("UID cannot be empty!")
+        return
+
+    response = requests.post(f"{BASE_URL}/add_employee/{uid}")
+    if response.status_code == 201:
+        print(f"Employee with UID {uid} successfully added.")
+    elif response.status_code == 400:
+        print(f"Error: {response.json().get('message', 'Unknown error')}")
+    else:
+        print(f"Failed to add employee. Status Code: {response.status_code}")
+
 def admin_terminal():
-    """Interactive terminal for admin actions."""
     while True:
         print("\nAdmin Panel")
         print("1. View employee entry times and time spent")
         print("2. View daily summary")
         print("3. View all logs")
-        print("4. Exit")
+        print("4. Add a new employee")
+        print("5. Exit")
         choice = input("Enter your choice: ").strip()
 
         if choice == "1":
@@ -89,6 +99,8 @@ def admin_terminal():
         elif choice == "3":
             view_all_logs()
         elif choice == "4":
+            add_employee()
+        elif choice == "5":
             print("Exiting Admin Panel.")
             break
         else:
